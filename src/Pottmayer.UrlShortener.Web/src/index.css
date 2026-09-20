@@ -1,0 +1,16 @@
+/* CSS layer order so Tailwind's preflight (base) does not wipe antd component styles, while
+   Tailwind utilities still win when applied explicitly. antd emits into the "antd" layer via
+   <StyleProvider layer> in main.tsx. */
+@layer theme, base, antd, components, utilities;
+
+@import 'tailwindcss';
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}

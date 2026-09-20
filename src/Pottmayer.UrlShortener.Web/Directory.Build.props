@@ -1,0 +1,5 @@
+<Project>
+  <!-- This is a JavaScript/TypeScript (.esproj) project. Stop it inheriting the repo-root
+       Directory.Build.props (TargetFramework, Nullable, ...), which only applies to the .NET
+       projects. MSBuild imports the nearest Directory.Build.props and does not walk further up. -->
+</Project>

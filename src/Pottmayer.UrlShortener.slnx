@@ -6,4 +6,8 @@
   <Project Path="Pottmayer.UrlShortener.Redirect/Pottmayer.UrlShortener.Redirect.csproj" />
   <Project Path="Pottmayer.UrlShortener.Analytics/Pottmayer.UrlShortener.Analytics.csproj" />
   <Project Path="Pottmayer.UrlShortener.Kgs/Pottmayer.UrlShortener.Kgs.csproj" />
+  <Project Path="Pottmayer.UrlShortener.Web/Pottmayer.UrlShortener.Web.esproj">
+    <Build />
+    <Deploy />
+  </Project>
 </Solution>
