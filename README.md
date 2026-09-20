@@ -1,54 +1,56 @@
 # URL Shortener
 
-Lab de system design poliglota sobre o framework **Tars**. Ver [docs/design.md](docs/design.md)
-para arquitetura, contratos, decisões (ADRs) e roadmap.
+**English** · [Português](README.pt-BR.md)
 
-## Serviços
+Polyglot system-design lab built on the **Tars** framework. See [docs/design.md](docs/design.md)
+for architecture, contracts, decisions (ADRs) and roadmap.
 
-| Serviço | Papel | Storage | Porta dev |
+## Services
+
+| Service | Role | Storage | Dev port |
 |---|---|---|---|
-| Gateway | entrada (YARP), rate-limit, roteamento | — | 8080 |
+| Gateway | entry point (YARP), rate-limit, routing | — | 8080 |
 | Shortening | write / source of truth + outbox | Postgres | 8081 |
 | Redirect | read / hot path (cache-aside) | Redis + Postgres | 8082 |
-| Analytics | consome cliques, agrega | MongoDB | 8083 |
-| Kgs | geração de short codes (ranges) | Postgres | 8084 |
+| Analytics | consumes clicks, aggregates | MongoDB | 8083 |
+| Kgs | short-code generation (ranges) | Postgres | 8084 |
 
-Broker: **Kafka** (eventos). O tars é consumido via **NuGet** (`Pottmayer.Tars.* 0.0.15`) do
-feed privado do GitHub Packages (ver `nuget.config`).
+Broker: **Kafka** (events). Tars is consumed via **NuGet** (`Pottmayer.Tars.* 0.0.15`) from the
+private GitHub Packages feed (see `nuget.config`).
 
-## Rodar tudo de uma vez (Docker)
+## Run everything at once (Docker)
 
 ```bash
 docker compose up --build
 ```
 
-Sobe **toda a stack** — infra + os 5 serviços .NET + o frontend — de uma vez. É o que o botão
-de run do Visual Studio dispara (projeto `docker-compose.dcproj` na solution): selecione
-**docker-compose** no seletor de startup e aperte F5.
+Brings up the **whole stack** — infra + the 5 .NET services + the frontend — in one shot. This is
+what the Visual Studio run button triggers (the `docker-compose.dcproj` project in the solution):
+select **docker-compose** in the startup dropdown and hit F5.
 
-Antes do primeiro build, coloque o PAT do GitHub Packages em `./github_token.txt` (uma linha,
-gitignored) — é o segredo usado pra restaurar os NuGets `Pottmayer.Tars.*` dentro do container.
+Before the first build, put your GitHub Packages PAT in `./github_token.txt` (a single line,
+gitignored) — it's the secret used to restore the `Pottmayer.Tars.*` NuGets inside the container.
 
-Depois de subir:
+Once it's up:
 - Frontend: http://localhost:5173
-- Gateway (API + short links): http://localhost:8080 — os códigos gerados apontam pra cá
+- Gateway (API + short links): http://localhost:8080 — generated codes point here
 - Grafana: http://localhost:3000 · Prometheus: http://localhost:9090
-- Serviços expostos p/ debug: shortening 8081, redirect 8082, analytics 8083, kgs 8084
+- Services exposed for debugging: shortening 8081, redirect 8082, analytics 8083, kgs 8084
 
-As migrations (migris) e os tópicos Kafka são pré-requisito do schema, mas persistem nos volumes
-(`pgdata`/`kafkadata`), então valem entre `up`s. Num clone novo, rode as migrations antes (abaixo).
+The migrations (migris) and Kafka topics are a schema prerequisite, but they persist in the volumes
+(`pgdata`/`kafkadata`), so they survive across `up`s. On a fresh clone, run the migrations first (below).
 
-## Rodar só a infra (modo host / F5 sem Docker)
+## Run only the infra (host mode / F5 without Docker)
 
 ```bash
 docker compose up -d postgres mongo mongo-init redis kafka kafka-init otel-collector prometheus grafana
 ```
 
-Sobe Postgres (5434), Mongo (27017), Redis (6379) e Kafka (9092); os serviços .NET rodam no host
-(via F5/`dotnet run`, apontando pra `localhost` nos appsettings). O Postgres já cria os bancos
-`urlshortener_shortening` e `urlshortener_kgs`.
+Brings up Postgres (5434), Mongo (27017), Redis (6379) and Kafka (9092); the .NET services run on the
+host (via F5/`dotnet run`, pointing at `localhost` in the appsettings). Postgres already creates the
+`urlshortener_shortening` and `urlshortener_kgs` databases.
 
-## Build (.NET, no host)
+## Build (.NET, on the host)
 
 ```bash
 dotnet build src/Pottmayer.UrlShortener.slnx
@@ -56,10 +58,11 @@ dotnet build src/Pottmayer.UrlShortener.slnx
 
 ## Migrations (migris)
 
-Um projeto migris por banco em `migrations/`. Copie `config.example.json` para `config.json`
-(gitignored) e rode `migris apply local` dentro da pasta do banco.
+One migris project per database under `migrations/`. Copy `config.example.json` to `config.json`
+(gitignored) and run `migris apply local` inside each database's folder.
 
 ## Status
 
-Fase 0 (scaffolding) — projetos + refs tars + infra. Bootstrap mínimo (health endpoint por serviço).
-Features vêm nas fases seguintes (ver design.md §12).
+Complete through the observability phase and the React frontend, plus a one-command Docker run
+(and the Visual Studio `docker-compose` startup). See [docs/design.md](docs/design.md) §12 for the
+sliced roadmap.

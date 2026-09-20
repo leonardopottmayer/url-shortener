@@ -1,13 +1,13 @@
-# Infra local do lab + os serviços .NET e o frontend. Um nó de cada, sem HA.
-# Portas escolhidas pra não colidir com outros projetos (ex.: pandora usa Postgres em 5433).
+# Local lab infra + the .NET services and the frontend. One node of each, no HA.
+# Ports chosen so they don't clash with other projects (e.g. pandora uses Postgres on 5433).
 #
-# "Rodar tudo de uma vez": docker compose up --build (é o que o botão de run do
-# Visual Studio dispara via docker-compose.dcproj). Os serviços .NET falam com a
-# infra pelos NOMES DE CONTAINER (postgres/mongo/redis/kafka/otel-collector) — os
-# appsettings.json continuam apontando pra localhost pro modo host (F5 sem Docker),
-# e aqui a rede é sobrescrita por variáveis de ambiente (Tars__... / ASPNETCORE).
+# "Run everything at once": docker compose up --build (this is what the Visual Studio run
+# button triggers via docker-compose.dcproj). The .NET services talk to the infra by
+# CONTAINER NAME (postgres/mongo/redis/kafka/otel-collector) — the appsettings.json files
+# keep pointing at localhost for host mode (F5 without Docker), and here the networking
+# is overridden via environment variables (Tars__... / ASPNETCORE).
 
-# Base comum dos cinco serviços .NET: mesma imagem (uma build só), SERVICE escolhe qual roda.
+# Shared base for the five .NET services: same image (one build), SERVICE picks which one runs.
 x-dotnet-service: &dotnet-service
   image: urlshortener-services:local
   build:
@@ -36,8 +36,8 @@ services:
 
   mongo:
     image: mongo:7
-    # Single-node replica set: o provider Mongo do tars usa sessão+transação, que
-    # exige replica set (rs0). O serviço mongo-init roda o rs.initiate() uma vez.
+    # Single-node replica set: the tars Mongo provider uses sessions+transactions, which
+    # require a replica set (rs0). The mongo-init service runs rs.initiate() once.
     command: ["--replSet", "rs0", "--bind_ip_all"]
     ports:
       - "27017:27017"
@@ -55,7 +55,7 @@ services:
       mongo:
         condition: service_healthy
     restart: "no"
-    # Membro anunciado como localhost:27017 porque os serviços .NET rodam no host.
+    # Member advertised as localhost:27017 because the .NET services run on the host.
     entrypoint:
       - bash
       - -c
@@ -187,8 +187,9 @@ services:
     environment:
       <<: *dotnet-env
       SERVICE: Analytics
-      # directConnection=true: fala direto com o nó mongo, sem seguir o host anunciado
-      # pelo replica set (que é "localhost", pro modo host). Transações seguem OK num RS de 1 nó.
+      # directConnection=true: talk straight to the mongo node, without following the host
+      # advertised by the replica set (which is "localhost", for host mode). Transactions still
+      # work fine on a single-node RS.
       Tars__Data__Mongo__Connections__default__ConnectionString: "mongodb://mongo:27017/?replicaSet=rs0&directConnection=true"
       Tars__Data__Mongo__Connections__default__Database: "urlshortener_analytics"
       Tars__Messaging__Kafka__BootstrapServers: "kafka:29092"
@@ -218,8 +219,8 @@ volumes:
   mongodata:
   kafkadata:
 
-# PAT do GitHub Packages pro restore do feed privado no build (Pottmayer.Tars.*).
-# Coloque o token em ./github_token.txt (gitignored) — uma linha só.
+# GitHub Packages PAT for the private-feed restore at build time (Pottmayer.Tars.*).
+# Put the token in ./github_token.txt (gitignored) — a single line.
 secrets:
   github_token:
     file: ./github_token.txt

@@ -32,7 +32,7 @@ function errorMessage(error: unknown): string {
     const data = error.response?.data as { error?: string } | undefined
     return data?.error ?? error.message
   }
-  return 'Erro inesperado.'
+  return 'Unexpected error.'
 }
 
 interface ShortenForm {
@@ -55,7 +55,7 @@ export function UrlShortenerApp() {
         shortUrl: result.shortUrl,
         createdAt: new Date().toISOString(),
       })
-      message.success(`Short link criado: ${result.code}`)
+      message.success(`Short link created: ${result.code}`)
       form.resetFields()
     },
     onError: (error) => message.error(errorMessage(error)),
@@ -64,9 +64,9 @@ export function UrlShortenerApp() {
   const copy = async (value: string) => {
     try {
       await navigator.clipboard.writeText(value)
-      message.success('Copiado.')
+      message.success('Copied.')
     } catch {
-      message.error('Não foi possível copiar.')
+      message.error('Could not copy.')
     }
   }
 
@@ -84,7 +84,7 @@ export function UrlShortenerApp() {
       ),
     },
     {
-      title: 'Destino',
+      title: 'Target',
       dataIndex: 'longUrl',
       ellipsis: true,
       render: (longUrl: string) => (
@@ -94,7 +94,7 @@ export function UrlShortenerApp() {
       ),
     },
     {
-      title: 'Ações',
+      title: 'Actions',
       key: 'actions',
       width: 160,
       render: (_, link) => (
@@ -123,47 +123,47 @@ export function UrlShortenerApp() {
 
       <Content className="mx-auto w-full max-w-3xl p-4">
         <Paragraph type="secondary" className="mt-2">
-          Lab de system design — gateway, KGS, cache, mensageria e analytics sobre o framework Tars.
+          System design lab — gateway, KGS, cache, messaging and analytics on top of the Tars framework.
         </Paragraph>
 
-        <Card title="Encurtar URL" className="mb-4">
+        <Card title="Shorten URL" className="mb-4">
           <Form
             form={form}
             layout="vertical"
             onFinish={(values) => shortenMutation.mutate(values)}
           >
             <Form.Item
-              label="URL longa"
+              label="Long URL"
               name="longUrl"
               rules={[
-                { required: true, message: 'Informe a URL.' },
-                { type: 'url', message: 'URL inválida (inclua http:// ou https://).' },
+                { required: true, message: 'Enter the URL.' },
+                { type: 'url', message: 'Invalid URL (include http:// or https://).' },
               ]}
             >
-              <Input placeholder="https://exemplo.com/uma/url/bem/longa" />
+              <Input placeholder="https://example.com/a/very/long/url" />
             </Form.Item>
 
             <Form.Item
-              label="Alias personalizado (opcional)"
+              label="Custom alias (optional)"
               name="customAlias"
-              rules={[{ pattern: /^[0-9A-Za-z]{3,16}$/, message: '3-16 caracteres [0-9A-Za-z].' }]}
+              rules={[{ pattern: /^[0-9A-Za-z]{3,16}$/, message: '3-16 characters [0-9A-Za-z].' }]}
             >
-              <Input placeholder="meu-alias" />
+              <Input placeholder="my-alias" />
             </Form.Item>
 
             <Button type="primary" htmlType="submit" loading={shortenMutation.isPending}>
-              Encurtar
+              Shorten
             </Button>
           </Form>
         </Card>
 
-        <Card title="Meus links">
+        <Card title="My links">
           <Table<MyLink>
             rowKey="code"
             columns={columns}
             dataSource={links}
             pagination={false}
-            locale={{ emptyText: 'Nenhum link ainda. Encurte um acima.' }}
+            locale={{ emptyText: 'No links yet. Shorten one above.' }}
           />
         </Card>
       </Content>
@@ -181,9 +181,9 @@ function StatsModal({ code, onClose }: { code: string | null; onClose: () => voi
   })
 
   return (
-    <Modal open={code !== null} onCancel={onClose} onOk={onClose} title={`Estatísticas — ${code ?? ''}`}>
+    <Modal open={code !== null} onCancel={onClose} onOk={onClose} title={`Statistics — ${code ?? ''}`}>
       <Statistic
-        title="Total de cliques"
+        title="Total clicks"
         value={query.data?.totalClicks ?? 0}
         loading={query.isFetching}
       />

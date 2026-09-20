@@ -1,4 +1,4 @@
--- Database-per-service: Shortening (source of truth dos links) e KGS (contador/ranges).
--- migris cria os objetos/tabelas dentro de cada banco; aqui só garantimos que os bancos existem.
+-- Database-per-service: Shortening (source of truth for the links) and KGS (counter/ranges).
+-- migris creates the objects/tables inside each database; here we only ensure the databases exist.
 CREATE DATABASE urlshortener_shortening;
 CREATE DATABASE urlshortener_kgs;
