@@ -1,5 +1,26 @@
-# Infra local do lab. Um nó de cada, sem HA. Portas escolhidas pra não colidir com
-# outros projetos (ex.: pandora usa Postgres em 5433).
+# Infra local do lab + os serviços .NET e o frontend. Um nó de cada, sem HA.
+# Portas escolhidas pra não colidir com outros projetos (ex.: pandora usa Postgres em 5433).
+#
+# "Rodar tudo de uma vez": docker compose up --build (é o que o botão de run do
+# Visual Studio dispara via docker-compose.dcproj). Os serviços .NET falam com a
+# infra pelos NOMES DE CONTAINER (postgres/mongo/redis/kafka/otel-collector) — os
+# appsettings.json continuam apontando pra localhost pro modo host (F5 sem Docker),
+# e aqui a rede é sobrescrita por variáveis de ambiente (Tars__... / ASPNETCORE).
+
+# Base comum dos cinco serviços .NET: mesma imagem (uma build só), SERVICE escolhe qual roda.
+x-dotnet-service: &dotnet-service
+  image: urlshortener-services:local
+  build:
+    context: .
+    dockerfile: Dockerfile
+    secrets:
+      - github_token
+  restart: unless-stopped
+  environment: &dotnet-env
+    ASPNETCORE_ENVIRONMENT: Development
+    Urls: "http://+:8080"
+    Tars__Observability__OtlpEndpoint: "http://otel-collector:4317"
+
 services:
   postgres:
     image: postgres:17
@@ -118,7 +139,87 @@ services:
     ports:
       - "3000:3000"
 
+  # --- Application services ---
+  gateway:
+    <<: *dotnet-service
+    environment:
+      <<: *dotnet-env
+      SERVICE: Gateway
+      ReverseProxy__Clusters__shortening__Destinations__d1__Address: "http://shortening:8080/"
+      ReverseProxy__Clusters__redirect__Destinations__d1__Address: "http://redirect:8080/"
+      ReverseProxy__Clusters__analytics__Destinations__d1__Address: "http://analytics:8080/"
+    depends_on:
+      - shortening
+      - redirect
+      - analytics
+
+  shortening:
+    <<: *dotnet-service
+    environment:
+      <<: *dotnet-env
+      SERVICE: Shortening
+      PublicBaseUrl: "http://localhost:8080"
+      Kgs__BaseUrl: "http://kgs:8080"
+      Tars__Data__Connections__default__ConnectionString: "Host=postgres;Port=5432;Database=urlshortener_shortening;Username=postgres;Password=postgres;Include Error Detail=true"
+      Tars__Caching__Redis__ConnectionString: "redis:6379,abortConnect=False"
+      Tars__Messaging__Kafka__BootstrapServers: "kafka:29092"
+    depends_on:
+      postgres: { condition: service_started }
+      redis: { condition: service_started }
+      kgs: { condition: service_started }
+      kafka-init: { condition: service_completed_successfully }
+
+  redirect:
+    <<: *dotnet-service
+    environment:
+      <<: *dotnet-env
+      SERVICE: Redirect
+      Tars__Data__Connections__default__ConnectionString: "Host=postgres;Port=5432;Database=urlshortener_shortening;Username=postgres;Password=postgres;Include Error Detail=true"
+      Tars__Caching__Redis__ConnectionString: "redis:6379,abortConnect=False"
+      Tars__Messaging__Kafka__BootstrapServers: "kafka:29092"
+    depends_on:
+      postgres: { condition: service_started }
+      redis: { condition: service_started }
+      kafka-init: { condition: service_completed_successfully }
+
+  analytics:
+    <<: *dotnet-service
+    environment:
+      <<: *dotnet-env
+      SERVICE: Analytics
+      # directConnection=true: fala direto com o nó mongo, sem seguir o host anunciado
+      # pelo replica set (que é "localhost", pro modo host). Transações seguem OK num RS de 1 nó.
+      Tars__Data__Mongo__Connections__default__ConnectionString: "mongodb://mongo:27017/?replicaSet=rs0&directConnection=true"
+      Tars__Data__Mongo__Connections__default__Database: "urlshortener_analytics"
+      Tars__Messaging__Kafka__BootstrapServers: "kafka:29092"
+    depends_on:
+      mongo-init: { condition: service_completed_successfully }
+      kafka-init: { condition: service_completed_successfully }
+
+  kgs:
+    <<: *dotnet-service
+    environment:
+      <<: *dotnet-env
+      SERVICE: Kgs
+      Tars__Data__Connections__default__ConnectionString: "Host=postgres;Port=5432;Database=urlshortener_kgs;Username=postgres;Password=postgres;Include Error Detail=true"
+    depends_on:
+      postgres: { condition: service_started }
+
+  web:
+    build:
+      context: ./src/Pottmayer.UrlShortener.Web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - gateway
+
 volumes:
   pgdata:
   mongodata:
   kafkadata:
+
+# PAT do GitHub Packages pro restore do feed privado no build (Pottmayer.Tars.*).
+# Coloque o token em ./github_token.txt (gitignored) — uma linha só.
+secrets:
+  github_token:
+    file: ./github_token.txt

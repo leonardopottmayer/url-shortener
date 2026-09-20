@@ -13,19 +13,42 @@ para arquitetura, contratos, decisões (ADRs) e roadmap.
 | Analytics | consome cliques, agrega | MongoDB | 8083 |
 | Kgs | geração de short codes (ranges) | Postgres | 8084 |
 
-Broker: **Kafka** (eventos). O tars é consumido **do código-fonte** (sibling repo `../tars`),
-via `$(TarsSrc)` no `Directory.Build.props`.
+Broker: **Kafka** (eventos). O tars é consumido via **NuGet** (`Pottmayer.Tars.* 0.0.15`) do
+feed privado do GitHub Packages (ver `nuget.config`).
 
-## Rodar a infra
+## Rodar tudo de uma vez (Docker)
 
 ```bash
-docker compose up -d
+docker compose up --build
 ```
 
-Sobe Postgres (5434), Mongo (27017), Redis (6379) e Kafka (9092). O Postgres já cria os
-bancos `urlshortener_shortening` e `urlshortener_kgs`.
+Sobe **toda a stack** — infra + os 5 serviços .NET + o frontend — de uma vez. É o que o botão
+de run do Visual Studio dispara (projeto `docker-compose.dcproj` na solution): selecione
+**docker-compose** no seletor de startup e aperte F5.
 
-## Build
+Antes do primeiro build, coloque o PAT do GitHub Packages em `./github_token.txt` (uma linha,
+gitignored) — é o segredo usado pra restaurar os NuGets `Pottmayer.Tars.*` dentro do container.
+
+Depois de subir:
+- Frontend: http://localhost:5173
+- Gateway (API + short links): http://localhost:8080 — os códigos gerados apontam pra cá
+- Grafana: http://localhost:3000 · Prometheus: http://localhost:9090
+- Serviços expostos p/ debug: shortening 8081, redirect 8082, analytics 8083, kgs 8084
+
+As migrations (migris) e os tópicos Kafka são pré-requisito do schema, mas persistem nos volumes
+(`pgdata`/`kafkadata`), então valem entre `up`s. Num clone novo, rode as migrations antes (abaixo).
+
+## Rodar só a infra (modo host / F5 sem Docker)
+
+```bash
+docker compose up -d postgres mongo mongo-init redis kafka kafka-init otel-collector prometheus grafana
+```
+
+Sobe Postgres (5434), Mongo (27017), Redis (6379) e Kafka (9092); os serviços .NET rodam no host
+(via F5/`dotnet run`, apontando pra `localhost` nos appsettings). O Postgres já cria os bancos
+`urlshortener_shortening` e `urlshortener_kgs`.
+
+## Build (.NET, no host)
 
 ```bash
 dotnet build src/Pottmayer.UrlShortener.slnx

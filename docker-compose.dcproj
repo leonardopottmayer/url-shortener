@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.Docker.Sdk">
+  <PropertyGroup Label="Globals">
+    <ProjectVersion>2.1</ProjectVersion>
+    <DockerComposeProjectName>url-shortener</DockerComposeProjectName>
+    <DockerTargetOS>Linux</DockerTargetOS>
+    <ProjectGuid>{B7E4C0A1-2F3D-4C5E-9A6B-8D1E2F3A4B5C}</ProjectGuid>
+    <!-- F5 brings the whole stack up and opens the frontend. -->
+    <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
+    <DockerServiceUrl>http://localhost:5173</DockerServiceUrl>
+    <DockerServiceName>web</DockerServiceName>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="docker-compose.yml" />
+    <None Include="docker-compose.override.yml">
+      <DependentUpon>docker-compose.yml</DependentUpon>
+    </None>
+    <None Include=".dockerignore">
+      <DependentUpon>docker-compose.yml</DependentUpon>
+    </None>
+  </ItemGroup>
+</Project>

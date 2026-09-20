@@ -236,3 +236,6 @@ nuget.config
 
 # migris: real per-database credentials stay out of source (config.example.json is committed).
 migrations/*/config.json
+
+# GitHub Packages PAT for the in-container NuGet restore (docker-compose secret). Never commit.
+github_token.txt

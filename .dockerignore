@@ -1,0 +1,8 @@
+# Keep build contexts small and avoid copying host build output into images.
+**/bin
+**/obj
+**/dist
+**/node_modules
+.git
+.vs
+github_token.txt

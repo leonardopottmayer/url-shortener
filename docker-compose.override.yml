@@ -1,0 +1,27 @@
+# Host port mappings for local dev (the base file keeps the services portable).
+# Gateway is the public entry (API + short-link redirects); the frontend is served
+# separately by nginx. The other services are exposed only for poking/debugging.
+services:
+  gateway:
+    ports:
+      - "8080:8080"
+
+  shortening:
+    ports:
+      - "8081:8080"
+
+  redirect:
+    ports:
+      - "8082:8080"
+
+  analytics:
+    ports:
+      - "8083:8080"
+
+  kgs:
+    ports:
+      - "8084:8080"
+
+  web:
+    ports:
+      - "5173:80"
