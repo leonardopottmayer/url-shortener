@@ -5,7 +5,11 @@ using Pottmayer.Tars.Messaging.MassTransit.Kafka.DI;
 using Pottmayer.UrlShortener.Analytics;
 using Pottmayer.UrlShortener.Contracts;
 
+using Pottmayer.UrlShortener.ServiceDefaults;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddUrlShortenerObservability();
 
 // Tars data pipeline — MongoDB (single database → keyless "default").
 builder.Services.AddTarsDataContextAccessor();
@@ -25,6 +29,8 @@ builder.AddTarsMassTransitKafka(configure: o =>
 });
 
 var app = builder.Build();
+
+app.UseUrlShortenerObservability();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "analytics" }));
 

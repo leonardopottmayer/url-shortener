@@ -11,7 +11,11 @@ using Pottmayer.Tars.Messaging.MassTransit.Kafka.DI;
 using Pottmayer.UrlShortener.Contracts;
 using Pottmayer.UrlShortener.Redirect;
 
+using Pottmayer.UrlShortener.ServiceDefaults;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddUrlShortenerObservability();
 
 // Tars data pipeline — reads the shortening database directly (single database → keyless).
 builder.Services.AddTarsDataContextAccessor();
@@ -42,6 +46,8 @@ builder.AddTarsMassTransitKafka(configure: o =>
 });
 
 var app = builder.Build();
+
+app.UseUrlShortenerObservability();
 
 var positive = new CacheEntryOptions(AbsoluteExpirationRelativeToNow: TimeSpan.FromHours(24));
 var negative = new CacheEntryOptions(AbsoluteExpirationRelativeToNow: TimeSpan.FromSeconds(60));

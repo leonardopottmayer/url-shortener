@@ -9,4 +9,8 @@
     <PackageReference Include="Pottmayer.Tars.Data.Relational" Version="0.0.15" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Pottmayer.UrlShortener.ServiceDefaults\Pottmayer.UrlShortener.ServiceDefaults.csproj" />
+  </ItemGroup>
+
 </Project>

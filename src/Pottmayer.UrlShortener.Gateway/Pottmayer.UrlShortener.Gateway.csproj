@@ -4,4 +4,8 @@
     <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Pottmayer.UrlShortener.ServiceDefaults\Pottmayer.UrlShortener.ServiceDefaults.csproj" />
+  </ItemGroup>
+
 </Project>

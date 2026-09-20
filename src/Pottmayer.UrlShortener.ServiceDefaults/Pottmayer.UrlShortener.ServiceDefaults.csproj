@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Pottmayer.Tars.Observability" Version="0.0.15" />
+    <PackageReference Include="Pottmayer.Tars.Observability.AspNetCore" Version="0.0.15" />
+    <PackageReference Include="Pottmayer.Tars.Observability.Serilog" Version="0.0.15" />
+  </ItemGroup>
+
+</Project>

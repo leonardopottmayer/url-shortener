@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="Pottmayer.UrlShortener.Contracts/Pottmayer.UrlShortener.Contracts.csproj" />
+  <Project Path="Pottmayer.UrlShortener.ServiceDefaults/Pottmayer.UrlShortener.ServiceDefaults.csproj" />
   <Project Path="Pottmayer.UrlShortener.Gateway/Pottmayer.UrlShortener.Gateway.csproj" />
   <Project Path="Pottmayer.UrlShortener.Shortening/Pottmayer.UrlShortener.Shortening.csproj" />
   <Project Path="Pottmayer.UrlShortener.Redirect/Pottmayer.UrlShortener.Redirect.csproj" />

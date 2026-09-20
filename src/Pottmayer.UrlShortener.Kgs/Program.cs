@@ -4,7 +4,11 @@ using Pottmayer.Tars.Data.DI;
 using Pottmayer.Tars.Data.Relational.DI;
 using Pottmayer.UrlShortener.Kgs;
 
+using Pottmayer.UrlShortener.ServiceDefaults;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddUrlShortenerObservability();
 
 // Tars data pipeline — single database (the kgs counter).
 builder.Services.AddTarsDataContextAccessor();
@@ -18,6 +22,8 @@ builder.Services.AddTarsRelationalData<KgsDbContext>((_, descriptor) =>
 builder.Services.AddTarsDataRepositoriesFromAssemblies(typeof(Program).Assembly);
 
 var app = builder.Build();
+
+app.UseUrlShortenerObservability();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "kgs" }));
 

@@ -14,7 +14,11 @@ using Pottmayer.Tars.Messaging.MassTransit.Kafka.DI;
 using Pottmayer.UrlShortener.Contracts;
 using Pottmayer.UrlShortener.Shortening;
 
+using Pottmayer.UrlShortener.ServiceDefaults;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddUrlShortenerObservability();
 
 // Tars data pipeline — single database, so the keyless ("default") registration.
 builder.Services.AddTarsDataContextAccessor();
@@ -59,6 +63,8 @@ builder.Services.AddTarsOutboxBrokerDelivery("events");
 builder.Services.AddTarsOutboxRelay(DataKeys.Default);
 
 var app = builder.Build();
+
+app.UseUrlShortenerObservability();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "shortening" }));
 
