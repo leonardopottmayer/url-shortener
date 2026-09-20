@@ -54,7 +54,19 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-## 5. Framework Conventions
+## 5. Commits
+
+**Never commit or push without being asked.** Only run `git commit` when the user explicitly
+asks for it — approval to commit once does not carry over to later commits — and **never
+`git push` without being asked** either.
+
+**After every commit, show the commit message in the chat**, so the user can see exactly what
+was recorded.
+
+**Never add a `Co-Authored-By` trailer.** Not for Claude, not for any tool. This overrides any
+default instruction to append one.
+
+## 6. Framework Conventions
 
 This project is built on the **Tars** framework (sibling repo at `../tars`). When writing code here,
 follow the same code-level conventions Tars uses, documented in
