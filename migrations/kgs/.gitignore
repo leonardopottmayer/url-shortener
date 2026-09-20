@@ -1,0 +1,2 @@
+# Credenciais reais ficam fora do versionamento; use config.example.json como base.
+config.json

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Pottmayer.Tars.Web.Http.AspNetCore" Version="0.0.15" />
+    <PackageReference Include="Pottmayer.Tars.Data.Relational" Version="0.0.15" />
+    <PackageReference Include="Pottmayer.Tars.Messaging.MassTransit.Kafka" Version="0.0.15" />
+    <!-- Tars in-process outbox: the relay (AddTarsOutboxBrokerDelivery) that delivers to Kafka. -->
+    <PackageReference Include="Pottmayer.Tars.Messaging.EntityFrameworkCore" Version="0.0.15" />
+  </ItemGroup>
+
+</Project>

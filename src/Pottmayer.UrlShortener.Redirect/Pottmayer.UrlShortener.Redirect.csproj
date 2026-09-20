@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Pottmayer.Tars.Web.Http.AspNetCore" Version="0.0.15" />
+    <PackageReference Include="Pottmayer.Tars.Caching.Redis" Version="0.0.15" />
+    <!-- Read-only fallback to Postgres on cache miss. -->
+    <PackageReference Include="Pottmayer.Tars.Data.Relational" Version="0.0.15" />
+    <!-- Publishes UrlAccessed (best-effort, no outbox). -->
+    <PackageReference Include="Pottmayer.Tars.Messaging.MassTransit.Kafka" Version="0.0.15" />
+  </ItemGroup>
+
+</Project>
