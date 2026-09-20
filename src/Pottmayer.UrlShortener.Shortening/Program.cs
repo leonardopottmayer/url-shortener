@@ -1,5 +1,8 @@
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
+using Pottmayer.Tars.Caching.DI;
+using Pottmayer.Tars.Caching.Redis.DI;
+using Pottmayer.Tars.Caching.Redis.Options;
 using Pottmayer.Tars.Data.Abstractions.UnitOfWork;
 using Pottmayer.Tars.Data.DI;
 using Pottmayer.Tars.Data.Relational.DI;
@@ -17,6 +20,14 @@ builder.Services.AddTarsRelationalData<ShorteningDbContext>((_, descriptor) =>
         .UseNpgsql(descriptor.ConnectionString)
         .Options);
 builder.Services.AddTarsDataRepositoriesFromAssemblies(typeof(Program).Assembly);
+
+// Redis holds the KGS buffer cursor so a restart resumes the range instead of leaving gaps.
+builder.AddTarsRedisCachingOptions();
+builder.Services.AddTarsCacheKeyBuilder<RedisCachingOptions>();
+builder.Services.AddTarsCacheSerializer();
+builder.Services.AddTarsRedisConnectionMultiplexer();
+builder.Services.AddTarsRedisDatabase();
+builder.Services.AddTarsRedisCacheProvider();
 
 // Short codes now come from the KGS (base62 over a buffered counter range), not random generation.
 builder.Services.AddHttpClient<IKgsClient, KgsClient>((sp, http) =>

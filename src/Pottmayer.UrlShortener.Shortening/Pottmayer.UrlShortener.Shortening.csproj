@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Pottmayer.Tars.Web.Http.AspNetCore" Version="0.0.15" />
+    <PackageReference Include="Pottmayer.Tars.Caching.Redis" Version="0.0.15" />
     <PackageReference Include="Pottmayer.Tars.Data.Relational" Version="0.0.15" />
     <PackageReference Include="Pottmayer.Tars.Messaging.MassTransit.Kafka" Version="0.0.15" />
     <!-- Tars in-process outbox: the relay (AddTarsOutboxBrokerDelivery) that delivers to Kafka. -->
