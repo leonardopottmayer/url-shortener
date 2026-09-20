@@ -13,4 +13,8 @@
     <PackageReference Include="Pottmayer.Tars.Messaging.MassTransit.Kafka" Version="0.0.15" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Pottmayer.UrlShortener.Contracts\Pottmayer.UrlShortener.Contracts.csproj" />
+  </ItemGroup>
+
 </Project>

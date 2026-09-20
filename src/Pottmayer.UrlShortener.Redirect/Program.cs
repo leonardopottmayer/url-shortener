@@ -6,6 +6,9 @@ using Pottmayer.Tars.Caching.Redis.Options;
 using Pottmayer.Tars.Data.Abstractions.UnitOfWork;
 using Pottmayer.Tars.Data.DI;
 using Pottmayer.Tars.Data.Relational.DI;
+using Pottmayer.Tars.Messaging.Abstractions;
+using Pottmayer.Tars.Messaging.MassTransit.Kafka.DI;
+using Pottmayer.UrlShortener.Contracts;
 using Pottmayer.UrlShortener.Redirect;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +34,13 @@ builder.Services.AddTarsRedisCacheProvider();
 
 builder.Services.AddSingleton<CacheMetrics>();
 
+// Kafka transport — publishes UrlAccessed (best-effort, no outbox).
+builder.AddTarsMassTransitKafka(configure: o =>
+{
+    o.Messaging.EndpointName = "redirect";
+    o.Messaging.RegisterEventsFromAssembly(typeof(UrlAccessed).Assembly);
+});
+
 var app = builder.Build();
 
 var positive = new CacheEntryOptions(AbsoluteExpirationRelativeToNow: TimeSpan.FromHours(24));
@@ -50,31 +60,58 @@ app.MapGet("/internal/cache-stats", (CacheMetrics metrics) =>
     });
 });
 
-app.MapGet("/{code}", async (string code, ICacheStore cache, CacheMetrics metrics, IUnitOfWorkFactory uow, CancellationToken ct) =>
+app.MapGet("/{code}", async (
+    string code,
+    ICacheStore cache,
+    CacheMetrics metrics,
+    IUnitOfWorkFactory uow,
+    IIntegrationEventBus bus,
+    ILoggerFactory loggerFactory,
+    CancellationToken ct) =>
 {
     // Cache-aside: try Redis first (a negative entry is still a hit — it spares Postgres).
+    string? target;
     var cached = await cache.TryGetAsync<LinkCacheEntry>(code, ct);
     if (cached.Found)
     {
         metrics.Hit();
-        return cached.Value!.LongUrl is { } hitUrl ? Results.Redirect(hitUrl, permanent: false) : Results.NotFound();
+        target = cached.Value!.LongUrl;
     }
-
-    metrics.Miss();
-    var link = await uow.ExecuteAsync(
-        async (ctx, token) => await ctx.AcquireRepository<IShortLinkRepository>().GetByIdAsync(code, token),
-        options: new UnitOfWorkOptions { CommitOnSuccess = false },
-        cancellationToken: ct);
-
-    if (link is null)
+    else
     {
-        await cache.SetAsync(code, new LinkCacheEntry(null), negative, ct);
-        return Results.NotFound();
+        metrics.Miss();
+        var link = await uow.ExecuteAsync(
+            async (ctx, token) => await ctx.AcquireRepository<IShortLinkRepository>().GetByIdAsync(code, token),
+            options: new UnitOfWorkOptions { CommitOnSuccess = false },
+            cancellationToken: ct);
+
+        if (link is null)
+        {
+            await cache.SetAsync(code, new LinkCacheEntry(null), negative, ct);
+            target = null;
+        }
+        else
+        {
+            await cache.SetAsync(code, new LinkCacheEntry(link.LongUrl), positive, ct);
+            target = link.LongUrl;
+        }
     }
 
-    await cache.SetAsync(code, new LinkCacheEntry(link.LongUrl), positive, ct);
+    if (target is null)
+        return Results.NotFound();
+
+    // Best-effort click event (design.md §8): never block or fail the redirect on a Kafka hiccup.
+    try
+    {
+        await bus.PublishAsync(new UrlAccessed(Guid.NewGuid(), DateTimeOffset.UtcNow, code), ct);
+    }
+    catch (Exception ex)
+    {
+        loggerFactory.CreateLogger("Redirect").LogWarning(ex, "Failed to publish UrlAccessed for {Code}", code);
+    }
+
     // 302 (not 301) on purpose: keeps the browser hitting us so analytics keeps counting (design.md §7).
-    return Results.Redirect(link.LongUrl, permanent: false);
+    return Results.Redirect(target, permanent: false);
 });
 
 app.Run();

@@ -3,9 +3,15 @@ using Microsoft.EntityFrameworkCore;
 using Pottmayer.Tars.Caching.DI;
 using Pottmayer.Tars.Caching.Redis.DI;
 using Pottmayer.Tars.Caching.Redis.Options;
+using Pottmayer.Tars.Data.Abstractions.Keys;
 using Pottmayer.Tars.Data.Abstractions.UnitOfWork;
 using Pottmayer.Tars.Data.DI;
 using Pottmayer.Tars.Data.Relational.DI;
+using Pottmayer.Tars.Messaging.Abstractions;
+using Pottmayer.Tars.Messaging.Broker.DI;
+using Pottmayer.Tars.Messaging.EntityFrameworkCore.DI;
+using Pottmayer.Tars.Messaging.MassTransit.Kafka.DI;
+using Pottmayer.UrlShortener.Contracts;
 using Pottmayer.UrlShortener.Shortening;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +40,24 @@ builder.Services.AddHttpClient<IKgsClient, KgsClient>((sp, http) =>
     http.BaseAddress = new Uri(sp.GetRequiredService<IConfiguration>()["Kgs:BaseUrl"] ?? "http://localhost:8084"));
 builder.Services.AddSingleton<KeyProvider>();
 
+// Kafka transport (in-memory host bus carries the rider) — publishes UrlCreated.
+builder.AddTarsMassTransitKafka(configure: o =>
+{
+    o.Messaging.EndpointName = "shortening";
+    o.Messaging.RegisterEventsFromAssembly(typeof(UrlCreated).Assembly);
+});
+
+// Transactional outbox -> Kafka: PublishAsync writes an OutboxMessage in the link's transaction, and
+// the relay drains it to the keyed "events" Kafka bus (the one clean path to a Kafka outbox in tars).
+builder.Services.AddSingleton(TimeProvider.System);   // outbox bus + relay depend on it
+builder.AddTarsOutboxOptions();
+builder.Services.AddTarsIntegrationEventSerializer();
+builder.Services.AddTarsOutboxBus();     // replaces the default bus so PublishAsync -> outbox row
+builder.Services.AddTarsOutboxStore();
+builder.Services.AddTarsKeyedKafkaIntegrationEventBus("events");  // after AddTarsOutboxBus's RemoveAll
+builder.Services.AddTarsOutboxBrokerDelivery("events");
+builder.Services.AddTarsOutboxRelay(DataKeys.Default);
+
 var app = builder.Build();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "shortening" }));
@@ -42,6 +66,7 @@ app.MapPost("/api/urls", async (
     CreateUrlRequest request,
     KeyProvider keys,
     IUnitOfWorkFactory uow,
+    IIntegrationEventBus bus,
     IConfiguration cfg,
     CancellationToken ct) =>
 {
@@ -77,6 +102,9 @@ app.MapPost("/api/urls", async (
             LongUrl = request.LongUrl,
             CreatedAt = DateTimeOffset.UtcNow,
         }, token);
+
+        // Written into THIS transaction as an outbox row; the relay delivers it to Kafka after commit.
+        await bus.PublishAsync(new UrlCreated(Guid.NewGuid(), DateTimeOffset.UtcNow, code, request.LongUrl), token);
 
         return true;
     }, cancellationToken: ct);

@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Pottmayer.Tars.Messaging.Abstractions" Version="0.0.15" />
+  </ItemGroup>
+
+</Project>
